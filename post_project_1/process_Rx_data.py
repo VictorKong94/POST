@@ -47,15 +47,27 @@ Rx = np.genfromtxt(FILE, delimiter=',', skip_header=1, filling_values=0,
 drug = np.genfromtxt(FILE, dtype='U2', delimiter=',', skip_header=1,
                      usecols=drug_cols)
 
+# Standardize drug names
+Drugs_dict = {'AT': 'Atorva', 'FL': 'Fluva', 'LO': 'Lova', 'PI': 'Pitava',
+              'PR': 'Prava', 'RO': 'Rosuva', 'SI': 'Simva'}
+drug = drug.astype('U6')
+for i in range(drug.shape[0]):
+    for j in range(drug.shape[1]):
+        drug[i,j] = drug[i,j].upper()
+for abbrev, full_name in Drugs_dict.items():
+    for i in range(drug.shape[0]):
+        for j in range(drug.shape[1]):
+            drug[i,j] = drug[i,j].replace(abbrev, full_name)
+
 # Scale dosages by DDD of different drugs
 scaling = np.zeros_like(Rx[:,:,mgs])
-scaling[(drug=='at') + (drug=='At') + (drug=='AT')] = 1/20
-scaling[(drug=='fl') + (drug=='Fl') + (drug=='FL')] = 1/160
-scaling[(drug=='lo') + (drug=='Lo') + (drug=='LO')] = 1/80
-scaling[(drug=='pi') + (drug=='Pi') + (drug=='PI')] = 1/4
-scaling[(drug=='pr') + (drug=='Pr') + (drug=='PR')] = 1/80
-scaling[(drug=='ro') + (drug=='Ro') + (drug=='RO')] = 1/5
-scaling[(drug=='si') + (drug=='Si') + (drug=='SI')] = 1/40
+scaling[drug=='Atorva'] = 1/20
+scaling[drug=='Fluva'] = 1/160
+scaling[drug=='Lova'] = 1/80
+scaling[drug=='Pitava'] = 1/4
+scaling[drug=='Prava'] = 1/80
+scaling[drug=='Rosuva'] = 1/5
+scaling[drug=='Simva'] = 1/40
 Rx[:,:,mgs] = Rx[:,:,mgs] * scaling
 
 # Compute frequencies of visits to pharmacist (units: number of times)
@@ -74,37 +86,55 @@ delta_Rx[range(daily_Rx.shape[0]),Visits-1] = 0
 
 # Compute PDD:DDD ratio by subject (units: DDD/day)
 PDD_per_DDD = Rx.prod(2).sum(1) / Rx[:,:,days].sum(1)
+PDD_per_DDD_factor = np.array(['[6-inf)'] * len(PDD_per_DDD), dtype='U11')
+PDD_per_DDD_factor[PDD_per_DDD < 6.00] = '[5.00-6.00)'
+PDD_per_DDD_factor[PDD_per_DDD < 5.00] = '[4.00-5.00)'
+PDD_per_DDD_factor[PDD_per_DDD < 4.00] = '[3.50-4.00)'
+PDD_per_DDD_factor[PDD_per_DDD < 3.50] = '[3.00-3.50)'
+PDD_per_DDD_factor[PDD_per_DDD < 3.00] = '[2.50-3.00)'
+PDD_per_DDD_factor[PDD_per_DDD < 2.50] = '[2.00-2.50)'
+PDD_per_DDD_factor[PDD_per_DDD < 2.00] = '[1.75-2.00)'
+PDD_per_DDD_factor[PDD_per_DDD < 1.75] = '[1.50-1.75)'
+PDD_per_DDD_factor[PDD_per_DDD < 1.50] = '[1.25-1.50)'
+PDD_per_DDD_factor[PDD_per_DDD < 1.25] = '[1.00-1.25)'
+PDD_per_DDD_factor[PDD_per_DDD < 1.00] = '[0.75-1.00)'
+PDD_per_DDD_factor[PDD_per_DDD < 0.75] = '[0.50-0.75)'
+PDD_per_DDD_factor[PDD_per_DDD < 0.50] = '[0.25-0.50)'
+PDD_per_DDD_factor[PDD_per_DDD < 0.25] = '[0.00-0.25)'
 
 # Compute frequencies of prescription changes (units: number of times)
 Rx_Change = (delta_Rx != 0).sum(1)
 Rx_Increase = (delta_Rx > 0).sum(1)
 Rx_Decrease = (delta_Rx < 0).sum(1)
 Total_Change = daily_Rx[range(daily_Rx.shape[0]),Visits-1] - daily_Rx[:,0]
-Rx_Change_Denominator = Rx_Change
-Rx_Change_Denominator[Rx_Change == 0] = 1
+Rx_Change_Denominator = Rx_Change.copy()
+Rx_Change_Denominator[Rx_Change_Denominator == 0] = 1
 Ratio_Inc_Change = Rx_Increase / Rx_Change_Denominator
 
 # Compute frequencies of drugs prescribed (units: number of days)
 # Assumes drugs of interest are statins
-Atorva = (Rx[:,:,days] * np.any((drug=='at', drug=='At', drug=='AT'), 0)).sum(1)
-Fluva = (Rx[:,:,days] * np.any((drug=='fl', drug=='Fl', drug=='FL'), 0)).sum(1)
-Lova = (Rx[:,:,days] * np.any((drug=='lo', drug=='Lo', drug=='LO'), 0)).sum(1)
-Pitava = (Rx[:,:,days] * np.any((drug=='pi', drug=='Pi', drug=='PI'), 0)).sum(1)
-Prava = (Rx[:,:,days] * np.any((drug=='pr', drug=='Pr', drug=='PR'), 0)).sum(1)
-Rosuva = (Rx[:,:,days] * np.any((drug=='ro', drug=='Ro', drug=='RO'), 0)).sum(1)
-Simva =(Rx[:,:,days] * np.any((drug=='si', drug=='Si', drug=='SI'), 0)).sum(1)
+Atorva = (Rx[:,:,days] * (drug=='Atorva')).sum(1)
+Fluva = (Rx[:,:,days] * (drug=='Fluva')).sum(1)
+Lova = (Rx[:,:,days] * (drug=='Lova')).sum(1)
+Pitava = (Rx[:,:,days] * (drug=='Pitava')).sum(1)
+Prava = (Rx[:,:,days] * (drug=='Prava')).sum(1)
+Rosuva = (Rx[:,:,days] * (drug=='Rosuva')).sum(1)
+Simva =(Rx[:,:,days] * (drug=='Simva')).sum(1)
 drugs = np.vstack((Atorva, Fluva, Lova, Pitava, Prava, Rosuva, Simva)).T
 Main_Drug = np.array(['Atorva', 'Fluva', 'Lova', 'Pitava', 'Prava', 'Rosuva',
                       'Simva'])[drugs.argmax(1)]
+Initial_Drug = drug[:,0]
+Final_Drug = drug[range(0, drug.shape[0]), (scaling != 0).sum(1) - 1]
 
 # Save data to plaintext file
-Head = np.array(['IDs', 'PDD/DDD', 'Number of Visits', 'PDD/DDD Changes',
-                 'PDD/DDD Increases', 'PDD/DDD Decreases',
+Head = np.array(['IDs', 'PDD/DDD', 'PDD/DDD Factor', 'Number of Visits',
+                 'PDD/DDD Changes', 'PDD/DDD Increases', 'PDD/DDD Decreases',
                  'Total PDD/DDD Change', 'Increase/Change Ratio', 'Atorva',
                  'Fluva', 'Lova', 'Pitava', 'Prava', 'Rosuva', 'Simva',
-                 'Primary Drug'])
-data = np.vstack((Head, np.vstack((IDs, PDD_per_DDD, Visits, Rx_Change,
-                                   Rx_Increase, Rx_Decrease, Total_Change,
-                                   Ratio_Inc_Change, drugs.T, Main_Drug)).T))
-filename = FILE.split('.')[0] + '_processed.' + FILE.split('.')[1]
+                 'Primary Drug', 'Initial Drug', 'Final Drug'])
+data = np.vstack((Head, np.vstack((IDs, PDD_per_DDD, PDD_per_DDD_factor,
+                                   Visits, Rx_Change, Rx_Increase, Rx_Decrease,
+                                   Total_Change, Ratio_Inc_Change, drugs.T,
+                                   Main_Drug, Initial_Drug, Final_Drug)).T))
+filename = "data/" + FILE.split('.')[0] + '_processed.' + FILE.split('.')[1]
 np.savetxt(filename, data, fmt='%s', delimiter=',')
