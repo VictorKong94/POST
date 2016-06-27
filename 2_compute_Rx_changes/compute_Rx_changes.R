@@ -2,8 +2,8 @@
 # Load relevant data #
 ######################
 
-case = read.csv("data/case_all_rx_processed.csv")
-cntl = read.csv("data/cntl_all_rx_processed.csv")
+case = read.csv("../data/case_all_rx_processed.csv")
+cntl = read.csv("../data/cntl_all_rx_processed.csv")
 
 ################################
 # Compute number of Rx changes #
@@ -123,7 +123,7 @@ cntl_type_change = cbind(cntl_type_change,
                          "Total" = apply(cntl_type_change, 1, sum))
 cntl_type_change = rbind(cntl_type_change,
                          "Total" = apply(cntl_type_change, 2, sum))
-write.csv(cntl_type_change, file = "data/cntl_type_change.csv")
+write.csv(cntl_type_change, file = "../data/cntl_type_change.csv")
 
 cntl_dose_change = with(cntl_by_subsets, {
   out = matrix(nrow = nlevels(PDD), ncol = nlevels(init_statin),
@@ -147,4 +147,4 @@ cntl_either_change = cbind(cntl_either_change,
                          "Total" = apply(cntl_either_change, 1, sum))
 cntl_either_change = rbind(cntl_either_change,
                          "Total" = apply(cntl_either_change, 2, sum))
-write.csv(cntl_either_change, file = "data/cntl_either_change.csv")
+write.csv(cntl_either_change, file = "../data/cntl_either_change.csv")

@@ -136,5 +136,5 @@ data = np.vstack((Head, np.vstack((IDs, PDD_per_DDD, PDD_per_DDD_factor,
                                    Visits, Rx_Change, Rx_Increase, Rx_Decrease,
                                    Total_Change, Ratio_Inc_Change, drugs.T,
                                    Main_Drug, Initial_Drug, Final_Drug)).T))
-filename = "data/" + FILE.split('.')[0] + '_processed.' + FILE.split('.')[1]
+filename = FILE.split('.')[0] + '_processed.' + FILE.split('.')[1]
 np.savetxt(filename, data, fmt='%s', delimiter=',')

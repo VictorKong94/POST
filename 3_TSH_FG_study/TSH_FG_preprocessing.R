@@ -2,12 +2,12 @@
 options(stringsAsFactors = F)
 
 # Read in glucose and TSH test data
-glucoseCase = read.csv("data/case_glucose.csv")
-glucoseCntl = read.csv("data/cntl_glucose.csv")
-tshCase = read.csv("data/case_TSH.csv")
-tshCntl = read.csv("data/cntl_TSH.csv")
-rxCase = read.csv("data/case_all_rx_processed.csv")
-rxCntl = read.csv("data/cntl_all_rx_processed.csv")
+glucoseCase = read.csv("../data/case_glucose.csv")
+glucoseCntl = read.csv("../data/cntl_glucose.csv")
+tshCase = read.csv("../data/case_TSH.csv")
+tshCntl = read.csv("../data/cntl_TSH.csv")
+rxCase = read.csv("../data/case_all_rx_processed.csv")
+rxCntl = read.csv("../data/cntl_all_rx_processed.csv")
 
 # Compile data frame that contains all relevant information:
 # - id: the patient's specific ID number,
@@ -90,4 +90,4 @@ for (id in rxCase$IDs) {
 }
 data$hypothyroidism = data$tshResult > 5.5
 
-write.csv(data, "data/TSH_FG_data.csv")
+write.csv(data, "../data/TSH_FG_data.csv")
