@@ -12,10 +12,13 @@ all$hispanic = all$hispanic == "Y"
 case = all[all$cohort == "case",]
 
 # Differences Between Cohorts
-hypo_cohort = chisq.test(table(all$hypothyroidism, all$cohort))
-tsh_cohort = summary(glm(tshResult ~ cohort,
-                     family = gaussian(link = "identity"),
-                     data = all))
+chisq.test(table(all$hypothyroidism, all$cohort)) # P = .5331
+summary(glm(hypothyroidism ~ cohort + female + age + WH + AS + BA + MU + hispanic,
+            family = binomial(link = "logit"),
+            data = all)) # P = .79849
+summary(glm(tshResult ~ cohort + female + age + WH + AS + BA + MU + hispanic,
+            family = gaussian(link = "identity"),
+            data = all)) # P = .78956
 
 # Endpoint diabetes (Includes both those diagnosed by FG and ICD)
 summary(glm(diabetes ~ tshResult + female + age + WH + AS + BA + MU + hispanic,
@@ -87,7 +90,7 @@ summary(glm(maxDelta ~ hypothyroidism + female + age + WH + AS +BA + MU + hispan
             family = gaussian(link = "identity"),
             data = case))
 
-# Higher tshResult ~ higher deltaFG, which is consistent with report direction.
+# Higher tshResult ~ higher deltaFG; consistent with reported direction.
 
 # Follow-Up Split by Gender
 summary(glm(deltaFG ~ tshResult + age + WH + AS + BA + MU + hispanic,
