@@ -123,5 +123,6 @@ vignettes/*.pdf
 *.utf8.md
 *.knit.md
 
-# Data
+# My stuff
 data/
+references/
