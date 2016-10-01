@@ -1,4 +1,3 @@
 # POST
 
-This repository is used to store code used to meet certain ends in the POST
-project.
+This repository is used to store code used in the POST project.
