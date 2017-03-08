@@ -21,8 +21,8 @@ rxCntl = read.csv("../data/cntl_all_rx_processed.csv")
 # - race: race with which patient identifies
 # - hispanic: whether patient identifies as hispanic
 # - diabetes: whether a patient was diagnosed as diabetic
-# - diagFromFG: whether a patient was diagnosed as diabetic by the FG method
-# - diagFromICD: whether a patient was diagnosed as diabetic by ICD standards
+# - diagFG: whether a patient was diagnosed as diabetic by the FG method
+# - diagICD: whether a patient was diagnosed as diabetic by ICD standards
 # - group: code that corresponds categories of diabetic, prediabetic, etc.
 data = data.frame(id = integer(0),
                   cohort = character(0),
@@ -36,8 +36,8 @@ data = data.frame(id = integer(0),
                   race = character(0),
                   hispanic = character(0),
                   diabetes = integer(0),
-                  diagFromFG = integer(0),
-                  diagFromICD = integer(0),
+                  diagFG = integer(0),
+                  diagICD = integer(0),
                   group = character(0))
 for (id in sort(tshCntl$id)) {
   data[nrow(data) + 1,] = c(id,
@@ -78,8 +78,8 @@ for (id in sort(tshCase$id)) {
                             glucoseCase$group[glucoseCase$id == id])
 }
 data$diabetes = data$diabetes == 1
-data$diagFromFG = data$diagFromFG == 1
-data$diagFromICD = data$diagFromICD == 1
+data$diagFG = data$diagFG == 1
+data$diagICD = data$diagICD == 1
 data$pdd = NA
 for (id in rxCntl$IDs) {
   data$pdd[data$id == id] = rxCntl$PDD.DDD[rxCntl$IDs == id]
@@ -88,6 +88,6 @@ for (id in rxCase$IDs) {
   data$statinType[data$id == id] = rxCase$Primary.Drug[rxCase$IDs == id]
   data$pdd[data$id == id] = rxCase$PDD.DDD[rxCase$IDs == id]
 }
-data$hypothyroidism = data$tshResult > 5.5
+data$hypoT4 = data$tshResult > 5.5
 
 write.csv(data, "../data/TSH_FG_data.csv")
