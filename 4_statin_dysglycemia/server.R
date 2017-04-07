@@ -37,8 +37,12 @@ function(input, output, session) {
   })
   
   # Render the tables in Shiny
-  output$complete_demographics = renderTable(complete_demographics())
-  output$hispanic_not_multiracial = renderTable(hispanic_not_multiracial())
+  output$complete_demographics = renderTable(complete_demographics(),
+                                             hover = T,
+                                             na = "")
+  output$hispanic_not_multiracial = renderTable(hispanic_not_multiracial(),
+                                                hover = T,
+                                                na = "")
   
   
   #####################################
@@ -52,20 +56,20 @@ function(input, output, session) {
   
   # We don't want the same variable for a predictor as our response
   predictor_choices = reactive({
-    setdiff(c("Pre-statin FG",
-              "Change in FG",
-              "Pre-statin BMI",
+    setdiff(c("Age",
               "Change in BMI",
-              "Sex",
-              "Age",
-              "Race",
-              "Hispanic",
-              "Main Statin Used",
-              "Changed Statin Type",
-              "PDD/DDD",
-              "Pre-statin LDL",
+              "Change in FG",
               "Change in LDL",
+              "Changed Statin Type",
+              "Hispanic",
+              "Main Statin Used (Days)",
               "Met LDL<100 Goal",
+              "PDD/DDD",
+              "Pre-statin BMI",
+              "Pre-statin FG",
+              "Pre-statin LDL",
+              "Race",
+              "Sex",
               "TSH Level"),
             input$response)
   })
@@ -130,10 +134,22 @@ function(input, output, session) {
   })
   
   # Render the tables in Shiny
-  output$diabetes_fg = renderTable(diabetes_fg(), digits = 8)
-  output$diabetes_icd = renderTable(diabetes_icd(), digits = 8)
-  output$diabetes_either = renderTable(diabetes_either(), digits = 8)
-  output$test_results = renderTable(test_results(), digits = 8)
+  output$diabetes_fg = renderTable(diabetes_fg(),
+                                   hover = T,
+                                   digits = 8,
+                                   na = "")
+  output$diabetes_icd = renderTable(diabetes_icd(),
+                                    hover = T,
+                                    digits = 8,
+                                    na = "")
+  output$diabetes_either = renderTable(diabetes_either(),
+                                       hover = T,
+                                       digits = 8,
+                                       na = "")
+  output$test_results = renderTable(test_results(),
+                                    hover = T,
+                                    digits = 8,
+                                    na = "")
 
   
   ####################

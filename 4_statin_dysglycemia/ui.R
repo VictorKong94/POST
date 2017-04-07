@@ -44,21 +44,7 @@ fluidPage(
         # Select Input -> Select Predictor Variable
         selectInput(inputId = "predictor",
                     label = "Select Predictor Variable",
-                    choices = c("Pre-statin FG",
-                                "Change in FG",
-                                "Pre-statin BMI",
-                                "Change in BMI",
-                                "Sex",
-                                "Age",
-                                "Race",
-                                "Hispanic",
-                                "Main Statin Used",
-                                "Changed Statin Type",
-                                "PDD/DDD",
-                                "Pre-statin LDL",
-                                "Change in LDL",
-                                "Met LDL<100 Goal",
-                                "TSH Level")
+                    choices = NULL
         ),
         
         # Numeric Input -> Number of Tests in Data Table
