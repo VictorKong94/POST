@@ -124,4 +124,7 @@ vignettes/*.pdf
 *.knit.md
 
 # My stuff
+archive/
 data/
+references/
+*~*
