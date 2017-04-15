@@ -11,11 +11,20 @@ function(input, output, session) {
   df = reactive({
     csv = switch(input$cohort,
                  "Analysis Cohort" = "data/analysis_cohort.csv",
+                 "Analysis Cohort - Males" = "data/analysis_cohort_M.csv",
+                 "Analysis Cohort - Females" = "data/analysis_cohort_F.csv",
                  "Changed Statin Type Cohort" = "data/delta_type.csv",
                  "No BMIs Cohort" = "data/no_bmi.csv",
                  "No Change in Statin Type Cohort" = "data/no_delta_type.csv")
     csv = read.csv(csv)
-    csv$sex = relevel(csv$sex, ref = "F")
+    if (input$cohort == "Analysis Cohort - Males") {
+      csv$sex = factor(csv$sex, levels = c("F", "M"))
+    } else if (input$cohort == "Analysis Cohort - Females") {
+      csv$sex = "F"
+      csv$sex = factor(csv$sex, levels = c("F", "M"))
+    } else {
+      csv$sex = relevel(csv$sex, ref = "F")
+    }
     csv$race = relevel(csv$race, ref = "WH")
     csv$statin_type = relevel(csv$statin_type, ref = "Simva")
     csv
@@ -56,22 +65,29 @@ function(input, output, session) {
   
   # We don't want the same variable for a predictor as our response
   predictor_choices = reactive({
+    leave_out_sex = switch(input$cohort,
+                           "Analysis Cohort - Males" = "Sex",
+                           "Analysis Cohort - Females" = "Sex",
+                           NA)
     setdiff(c("Age",
               "Change in BMI",
               "Change in FG",
               "Change in LDL",
+              "Change in Log LDL",
               "Changed Statin Type",
               "Hispanic",
+              "Log Pre-Statin LDL",
               "Main Statin Used (Days)",
               "Met LDL<100 Goal",
-              "PDD/DDD",
-              "Pre-statin BMI",
-              "Pre-statin FG",
-              "Pre-statin LDL",
+              "PDD per DDD",
+              "Pre-Statin BMI",
+              "Pre-Statin FG",
+              "Pre-Statin LDL",
               "Race",
               "Sex",
               "TSH Level"),
-            input$response)
+            c(input$response,
+              leave_out_sex))
   })
   
   # Update Select Input for predictor choices
@@ -113,43 +129,38 @@ function(input, output, session) {
   # TEST RESULTS #
   ################
   
-  # Create table of test results where diabetes (FG>126) is the response
-  diabetes_fg = reactive({
-    test("diabFG", predictor(), nTest(), df(), input)
-  })
-  
-  # Create table of test results where diabetes (ICD) is the response
-  diabetes_icd = reactive({
-    test("diabICD", predictor(), nTest(), df(), input)
-  })
-  
-  # Create table of test results where diabetes (either) is the response
-  diabetes_either = reactive({
-    test("diabComb", predictor(), nTest(), df(), input)
-  })
-  
   # Create table of test results with some other response
   test_results = reactive({
-    test(response(), predictor(), nTest(), df(), input)
+    if (input$response == "Diabetes Development") {
+      diab = test("diabFG", predictor(), nTest(), df(), input)
+      diab = cbind(diab,
+                   test("diabICD", predictor(), nTest(), df(), input
+                        )[, c("Beta", "P")])
+      diab = cbind(diab,
+                   test("diabComb", predictor(), nTest(), df(), input
+                        )[, c("Beta", "P")])
+      if (input$predictor %in% c("Statin", "Race")) {
+        colnames(diab) = c("Covariates", "Level",
+                           "Beta (FG>126)", "P (FG>126)",
+                           "Beta (ICD)", "P (ICD)",
+                           "Beta (Either)", "P (Either)")
+      } else {
+        colnames(diab) = c("Covariates",
+                           "Beta (FG>126)", "P (FG>126)",
+                           "Beta (ICD)", "P (ICD)",
+                           "Beta (Either)", "P (Either)")
+      }
+      diab
+    } else {
+      test(response(), predictor(), nTest(), df(), input)
+    }
   })
   
   # Render the tables in Shiny
-  output$diabetes_fg = renderTable(diabetes_fg(),
+  output$test_results = renderTable(test_results(),
                                    hover = T,
                                    digits = 8,
                                    na = "")
-  output$diabetes_icd = renderTable(diabetes_icd(),
-                                    hover = T,
-                                    digits = 8,
-                                    na = "")
-  output$diabetes_either = renderTable(diabetes_either(),
-                                       hover = T,
-                                       digits = 8,
-                                       na = "")
-  output$test_results = renderTable(test_results(),
-                                    hover = T,
-                                    digits = 8,
-                                    na = "")
 
   
   ####################
@@ -161,9 +172,9 @@ function(input, output, session) {
       if (input$show == "Demographics") {
         paste0("Demographics (", input$cohort, ").zip")
       } else if (input$response == "Diabetes Development") {
-        paste0(input$response, " ~ ", input$predictor, ".zip")
+        paste0("Diabetes Development - ", input$predictor, ".zip")
       } else {
-        paste0(input$response, " ~ ", input$predictor, ".csv")
+        paste0(input$response, " - ", input$predictor, ".csv")
       }
     },
     content = function(con) {
@@ -174,18 +185,6 @@ function(input, output, session) {
         setwd(tempdir())
         write.csv(complete_demographics(), file = files[1], row.names = F)
         write.csv(hispanic_not_multiracial(), file = files[2], row.names = F)
-        zip(zipfile = con, files = files)
-      } else if (input$response == "Diabetes Development") {
-        files = paste0("Diabetes Development",
-                       c("FG>126", "ICD", "Either"),
-                       " ~ ",
-                       input$predictor,
-                       ".csv")
-        tmpdir = tempdir()
-        setwd(tempdir())
-        write.csv(diabetes_fg(), file = files[1], row.names = F)
-        write.csv(diabetes_icd(), file = files[2], row.names = F)
-        write.csv(diabetes_either(), file = files[3], row.names = F)
         zip(zipfile = con, files = files)
       } else {
         write.csv(test_results(), con)

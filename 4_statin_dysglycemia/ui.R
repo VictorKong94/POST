@@ -15,6 +15,8 @@ fluidPage(
       selectInput(inputId = "cohort",
                   label = "Select Cohort",
                   choices = c("Analysis Cohort",
+                              "Analysis Cohort - Males",
+                              "Analysis Cohort - Females",
                               "Changed Statin Type Cohort",
                               "No BMIs Cohort",
                               "No Change in Statin Type Cohort")
@@ -81,27 +83,9 @@ fluidPage(
       # Show Test Results
       conditionalPanel(
         condition = "input.show == 'Test Results'",
-        
-        # Use tabs if response is diabetes development
-        conditionalPanel(
-          condition = "input.response == 'Diabetes Development'",
-          tabsetPanel(type = "tabs",
-                      tabPanel("FG>126",
-                               tableOutput(outputId = "diabetes_fg")),
-                      tabPanel("ICD",
-                               tableOutput(outputId = "diabetes_icd")),
-                      tabPanel("Either",
-                               tableOutput(outputId = "diabetes_either"))
-          )
-        ),
-        
-        # If not, use the standard table
-        conditionalPanel(
-          condition = "input.response != 'Diabetes Development'",
-          tableOutput(outputId = "test_results")
-        )
-        
+        tableOutput(outputId = "test_results")
       )
+      
     )
   )
 )
