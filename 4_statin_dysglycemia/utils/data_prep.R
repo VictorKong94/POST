@@ -1,8 +1,29 @@
+#########
+# SETUP #
+#########
+
+# Define a function to help us replace blanks
+replace_blanks = function(vector) {
+  if (is.numeric(vector) | is.integer(vector)) {
+    vector_wo_blanks = vector[!is.na(vector)]
+    vector[is.na(vector)] = vector_wo_blanks[length(vector_wo_blanks)]
+  } else {
+    vector_wo_blanks = vector[vector != ""]
+    vector[vector == ""] = vector_wo_blanks[length(vector_wo_blanks)]
+  }
+  return(vector)
+}
+
+#############
+# DATA PREP #
+#############
+
 # Note on columns:
 # - diabflag: T2D diagnosis from fasting glucose measurements
 # - diabdx: T2D diagnosis by ICD standards
 # - diabcflag: combination T2D diagnosis (either method used)
 df = read.csv("../data/raw_data.csv", na.strings = "")
+x = read.csv("../data/bleeding_data.csv", stringsAsFactors = F)
 
 # No individuals with strictly 5+ years of continuous statin use were determined
 # to have developed T2D by any standards
@@ -31,12 +52,15 @@ df$delta_ldl = df$ave_post_ldl - df$ave_pre_ldl # Change in LDL
 df$delta_log_ldl = log(df$ave_post_ldl) - df$log_pre_ldl # Change in Log LDL
 
 # Time it took for diabetes individuals to develop new-onset diabetes
-df$statin_date = as.Date(df$statin_date, format = "%m/%d/%y")
+df$statin_date = as.Date(df$statin_date,
+                         format = "%m/%d/%y",
+                         origin = "01/01/00") # Statin start
 fg_date = df[, grep("postdts", colnames(df))]
 diab_date_index = apply(df[, grep("postglu", colnames(df))] >= 126, 1,
                         function(x) match(TRUE, x))
 diab_date = as.Date(fg_date[cbind(1:nrow(fg_date), diab_date_index)],
-                    format = "%m/%d/%y")
+                    format = "%m/%d/%y",
+                    origin = "01/01/00") # Date of diabetes diagnosis by FG>126
 df$survival = as.numeric(diab_date - df$statin_date)
 
 # Whether a patient met their lipid lowering goals
@@ -45,6 +69,45 @@ df$met_ldl_goal = df$ave_post_ldl < 100
 # Whether a patient changed statin types
 df$changed_statin_type = apply(df[, grep("va$", colnames(df))], 1,
                                function(x) sum(x > 0)) > 1
+
+# Time it took an individual to change Statin type
+x = x[x$id %in% df$id[df$changed_statin_type],] # Isolate changed Statin type
+# Figure out at which appointments individuals changed Statin types
+gennm = x[, grep("gennm", colnames(x))]
+gennm = apply(gennm, 1, replace_blanks)
+changed = gennm[-1,] != gennm[-nrow(gennm),]
+# Compute dates of individuals' appointments
+x$statin_date = as.Date(x$statin_date,
+                        format = "%m/%d/%y",
+                        origin = "01/01/70")
+days = x[, setdiff(grep("days", colnames(x)), grep("tot", colnames(x)))]
+days = apply(days, 1, cumsum)
+days = data.frame(apply(days, 2, replace_blanks))
+appt_dates = data.frame("test_subject" = rep(x$statin_date[1], nrow(days) - 1))
+for (i in 1:ncol(days)) {
+  appt_dates[, colnames(days)[i]] = rep(x$statin_date[i], nrow(days) - 1)
+}
+appt_dates[, -1] = appt_dates[, -1] + days[-nrow(days),]
+appt_dates$test_subject = NULL
+# Figure out the exact dates individuals changed Statin types
+x$date_changed_statin = x$statin_date
+for (i in 1:ncol(changed)) {
+  x$date_changed_statin[i] = appt_dates[,i][changed[,i]][1]
+}
+x$days_before_changed_statin = x$date_changed_statin - x$statin_date
+df$date_changed_statin[df$MRN %in% x$MRN] = x$date_changed_statin
+df$days_before_changed_statin[df$MRN %in% x$MRN] = x$days_before_changed_statin
+
+#
+#
+#
+#
+#
+#
+#
+#
+#
+# Recalculate max_delta so before changed Statin type
 
 # Variables to check whether PDD is different for users of different statins
 df$lovastatin_pdd = df$PDD.DDD
@@ -61,7 +124,8 @@ df = df[, c("id", # Patient identification
             "patient_sex", # Sex
             "patient_age", # Age
             "kpnc_race_category", "kpnc_hispanic", # Race / Hispanic
-            "Primary.Drug", "changed_statin_type", # Statin-related
+            "Primary.Drug", "changed_statin_type",
+                            "days_before_changed_statin", # Statin-related
             "PDD.DDD", "PDD.DDD.Factor", # PDD-related
             "lovastatin_pdd", "other_pdd",# PDD- and Statin-related
             "ave_pre_ldl", "log_pre_ldl", "delta_ldl", "delta_log_ldl",
@@ -76,6 +140,7 @@ colnames(df) = c("id",
                  "age",
                  "race", "hispanic",
                  "statin_type", "changed_statin_type",
+                                "days_before_changed_statin",
                  "pdd", "pdd_group",
                  "lovastatin_pdd", "other_pdd",
                  "pre_ldl", "log_pre_ldl", "delta_ldl", "delta_log_ldl",
