@@ -80,6 +80,8 @@ function(input, output, session) {
               "Main Statin Used (Days)",
               "Met LDL<100 Goal",
               "PDD per DDD",
+              "PDD per DDD (Lovastatin)",
+              "PDD per DDD (Other)",
               "Pre-Statin BMI",
               "Pre-Statin FG",
               "Pre-Statin LDL",
@@ -139,7 +141,7 @@ function(input, output, session) {
       diab = cbind(diab,
                    test("diabComb", predictor(), nTest(), df(), input
                         )[, c("Beta", "P")])
-      if (input$predictor %in% c("Statin", "Race")) {
+      if (input$predictor %in% c("Main Statin Used (Days)", "Race")) {
         colnames(diab) = c("Covariates", "Level",
                            "Beta (FG>126)", "P (FG>126)",
                            "Beta (ICD)", "P (ICD)",
@@ -171,8 +173,6 @@ function(input, output, session) {
     filename = function(con) {
       if (input$show == "Demographics") {
         paste0("Demographics (", input$cohort, ").zip")
-      } else if (input$response == "Diabetes Development") {
-        paste0("Diabetes Development - ", input$predictor, ".zip")
       } else {
         paste0(input$response, " - ", input$predictor, ".csv")
       }
@@ -183,11 +183,11 @@ function(input, output, session) {
                        ".csv")
         tmpdir =  tempdir()
         setwd(tempdir())
-        write.csv(complete_demographics(), file = files[1], row.names = F)
-        write.csv(hispanic_not_multiracial(), file = files[2], row.names = F)
+        write.csv(complete_demographics(), files[1], row.names = F, na = "")
+        write.csv(hispanic_not_multiracial(), files[2], row.names = F, na = "")
         zip(zipfile = con, files = files)
       } else {
-        write.csv(test_results(), con)
+        write.csv(test_results(), con, row.names = F, na = "")
       }
     }
   )
