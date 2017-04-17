@@ -38,6 +38,7 @@ fluidPage(
                     label = "Select Response Variable",
                     choices = c("Change in FG",
                                 "Change in LDL",
+                                "Change in Log LDL",
                                 "Diabetes Development",
                                 "Survival"),
                     selected = "Diabetes Development"

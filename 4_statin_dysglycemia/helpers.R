@@ -76,7 +76,7 @@ log_reg = function(formula, data = df) {
   model = glm(formula, family = binomial(link = "logit"), data = data)
   list("model" = model,
        "summary" = summary(model)$coefficients[, c(1, 4)],
-       "anova" = anova(model, test = "Chisq")[, 5])
+       "anova" = anova(model, test = "Chisq")[2, 5])
 }
 
 # Method to assess relationship between relationship to survival time
@@ -84,7 +84,7 @@ lin_reg = function(formula, data = df) {
   model = lm(formula, data = data)
   list("model" = model,
        "summary" = summary(model)$coefficients[, c(1, 4)],
-       "anova" = anova(model, test = "Chisq")[, 5])
+       "anova" = anova(model, test = "Chisq")[1, 5])
 }
 
 # Method to compose a data table of test results
@@ -115,7 +115,7 @@ test = function(response, predictor, nTest, data, input) {
                    "Level" = c(lvls, "(Overall ANOVA)"))
     X$Beta = c(tail(no_covars$summary[, 1], 3), NA)
     X$P = c(tail(no_covars$summary[, 2], 3),
-            tail(no_covars$anova, 1))
+            no_covars$anova)
     
     # Perform each subsequent test the user desires
     if (nTest > 1) {
