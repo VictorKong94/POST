@@ -28,13 +28,36 @@ lin_reg = function(formula, data = df) {
        "anova" = anova(model, test = "Chisq"))
 }
 
+# Method to perform a two-sample t-test
+t_test = function(variable, split, data = df) {
+  if (length(unique(data[, split])) != 2) {
+    stop("Variable must have only two levels")
+  }
+  var.test(data[data[, split] == unique(data[, split])[1], variable],
+           data[data[, split] == unique(data[, split])[2], variable])$p.value
+}
+
 # Method to compute aggregate statistics quickly
 agg = function(variable, data = df) {
   report = suppressWarnings(
     aggregate(df[setdiff(colnames(data), "id")],
               by = list(data[, variable]),
-              FUN = function(x) round(mean(x, na.rm = T), 4))
+              FUN = function(x) mean(x, na.rm = T))
   )
+  if (length(unique(data[, variable])) == 2) {
+    drop = switch(variable,
+                  "changed_statin_type" = "days_before_changed_statin",
+                  "diabFG" = "survival",
+                  "diabComb" = "survival",
+                  NA)
+    report = rbind(
+      report,
+      sapply(setdiff(colnames(data), c("id", variable, drop)), function(x)
+        suppressWarnings(t_test(variable = x, split = variable, data = data))
+      )
+    )
+    report[3, 1] = "p-value"
+  }
   colnames(report)[1] = variable
   report[, unique(colnames(report))]
 }

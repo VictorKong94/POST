@@ -22,8 +22,11 @@ replace_blanks = function(vector) {
 # - diabflag: T2D diagnosis from fasting glucose measurements
 # - diabdx: T2D diagnosis by ICD standards
 # - diabcflag: combination T2D diagnosis (either method used)
-df = read.csv("../data/raw_data.csv", na.strings = "")
-x = read.csv("../data/bleeding_data.csv", stringsAsFactors = F)
+df = read.csv("../data/raw_data.csv",
+              na.strings = "")
+x = read.csv("../data/bleeding_data.csv",
+             na.strings = "",
+             stringsAsFactors = F)
 
 # No individuals with strictly 5+ years of continuous statin use were determined
 # to have developed T2D by any standards
@@ -56,11 +59,18 @@ df$statin_date = as.Date(df$statin_date,
                          format = "%m/%d/%y",
                          origin = "01/01/00") # Statin start
 fg_date = df[, grep("postdts", colnames(df))]
-diab_date_index = apply(df[, grep("postglu", colnames(df))] >= 126, 1,
+for (i in 1:ncol(fg_date)) {
+  fg_date[, i] = as.Date(fg_date[, i],
+                         format = "%m/%d/%y",
+                         origin = "01/01/00")
+}
+fg_reading = df[, grep("postglu", colnames(df))]
+diab_date_index = apply(fg_reading >= 126, 1,
                         function(x) match(TRUE, x))
-diab_date = as.Date(fg_date[cbind(1:nrow(fg_date), diab_date_index)],
-                    format = "%m/%d/%y",
-                    origin = "01/01/00") # Date of diabetes diagnosis by FG>126
+diab_date = fg_date[cbind(1:nrow(fg_date), diab_date_index)]
+diab_date = as.Date(diab_date,
+                    format = "%Y-%m-%d",
+                    origin = "01/01/00") # Date of first FG>126
 df$survival = as.numeric(diab_date - df$statin_date)
 
 # Whether a patient met their lipid lowering goals
@@ -79,7 +89,7 @@ changed = gennm[-1,] != gennm[-nrow(gennm),]
 # Compute dates of individuals' appointments
 x$statin_date = as.Date(x$statin_date,
                         format = "%m/%d/%y",
-                        origin = "01/01/70")
+                        origin = "01/01/00")
 days = x[, setdiff(grep("days", colnames(x)), grep("tot", colnames(x)))]
 days = apply(days, 1, cumsum)
 days = data.frame(apply(days, 2, replace_blanks))
@@ -90,24 +100,28 @@ for (i in 1:ncol(days)) {
 appt_dates[, -1] = appt_dates[, -1] + days[-nrow(days),]
 appt_dates$test_subject = NULL
 # Figure out the exact dates individuals changed Statin types
-x$date_changed_statin = x$statin_date
+x$date_statin_change = x$statin_date
 for (i in 1:ncol(changed)) {
-  x$date_changed_statin[i] = appt_dates[,i][changed[,i]][1]
+  x$date_statin_change[i] = appt_dates[,i][changed[,i]][1]
 }
-x$days_before_changed_statin = x$date_changed_statin - x$statin_date
-df$date_changed_statin[df$MRN %in% x$MRN] = x$date_changed_statin
-df$days_before_changed_statin[df$MRN %in% x$MRN] = x$days_before_changed_statin
+x$days_before_statin_change = x$date_statin_change - x$statin_date
+df$days_before_statin_change[df$MRN %in% x$MRN] = x$days_before_statin_change
 
-#
-#
-#
-#
-#
-#
-#
-#
-#
-# Recalculate max_delta so before changed Statin type
+# Adjust maxdelta for those who changed their statin type
+before_statin_change = fg_date[df$MRN %in% x$MRN,]
+for (i in 1:ncol(before_statin_change)) {
+  before_statin_change[, i] = before_statin_change[, i] < x$date_statin_change
+}
+before_statin_change[is.na(before_statin_change)] = F
+x_fg_reading = fg_reading[df$MRN %in% x$MRN,]
+adj_max_delta = x$maxdelta
+for (i in 1:length(adj_max_delta)) {
+  temp = as.numeric(x_fg_reading[i, as.logical(before_statin_change[i,])])
+  adj_ave_post_glu = suppressWarnings(mean(head(sort(temp, decreasing = T), 2)))
+  adj_max_delta[i] = adj_ave_post_glu - x$avepre_gluresult[i]
+}
+adj_max_delta[is.nan(adj_max_delta)] = NA
+df$adj_max_delta[df$MRN %in% x$MRN] = adj_max_delta
 
 # Variables to check whether PDD is different for users of different statins
 df$lovastatin_pdd = df$PDD.DDD
@@ -119,13 +133,13 @@ df$other_pdd[df$Primary.Drug %in% c("Lova", "Simva")] = 0
 df = df[, c("id", # Patient identification
             "diabflag", "diabdx", "diabcflag", # Development of diabetes
             "survival", # Days after starting statins to develop T2D
-            "avepre_gluresult", "maxdelta", # Fasting glucose
+            "avepre_gluresult", "maxdelta", "adj_max_delta", # Fasting glucose
             "ave_pre_bmi", "delta_bmi", # BMI
             "patient_sex", # Sex
             "patient_age", # Age
             "kpnc_race_category", "kpnc_hispanic", # Race / Hispanic
             "Primary.Drug", "changed_statin_type",
-                            "days_before_changed_statin", # Statin-related
+                            "days_before_statin_change", # Statin-related
             "PDD.DDD", "PDD.DDD.Factor", # PDD-related
             "lovastatin_pdd", "other_pdd",# PDD- and Statin-related
             "ave_pre_ldl", "log_pre_ldl", "delta_ldl", "delta_log_ldl",
@@ -134,13 +148,13 @@ df = df[, c("id", # Patient identification
 colnames(df) = c("id",
                  "diabFG", "diabICD", "diabComb",
                  "survival",
-                 "pre_fg", "delta_fg",
+                 "pre_fg", "delta_fg", "adj_delta_fg",
                  "pre_bmi", "delta_bmi",
                  "sex",
                  "age",
                  "race", "hispanic",
                  "statin_type", "changed_statin_type",
-                                "days_before_changed_statin",
+                                "days_before_statin_change",
                  "pdd", "pdd_group",
                  "lovastatin_pdd", "other_pdd",
                  "pre_ldl", "log_pre_ldl", "delta_ldl", "delta_log_ldl",
@@ -160,9 +174,27 @@ data_no_delta_type = data_with_bmi[!data_with_bmi$changed_statin_type,]
 data_females = data_with_bmi[data_with_bmi$sex == "F",]
 data_males = data_with_bmi[data_with_bmi$sex == "M",]
 
-write.csv(data_with_bmi, file = "../data/analysis_cohort.csv", row.names = F)
-write.csv(data_without_bmi, file = "../data/no_bmi.csv", row.names = F)
-write.csv(data_delta_type, file = "../data/delta_type.csv", row.names = F)
-write.csv(data_no_delta_type, file = "../data/no_delta_type.csv", row.names = F)
-write.csv(data_females, file = "../data/analysis_cohort_F.csv", row.names = F)
-write.csv(data_males, file = "../data/analysis_cohort_M.csv", row.names = F)
+write.csv(data_with_bmi,
+          file = "../data/analysis_cohort.csv",
+          row.names = F,
+          na = "")
+write.csv(data_without_bmi,
+          file = "../data/no_bmi.csv",
+          row.names = F,
+          na = "")
+write.csv(data_delta_type,
+          file = "../data/delta_type.csv",
+          row.names = F,
+          na = "")
+write.csv(data_no_delta_type,
+          file = "../data/no_delta_type.csv",
+          row.names = F,
+          na = "")
+write.csv(data_females,
+          file = "../data/analysis_cohort_F.csv",
+          row.names = F,
+          na = "")
+write.csv(data_males,
+          file = "../data/analysis_cohort_M.csv",
+          row.names = F,
+          na = "")

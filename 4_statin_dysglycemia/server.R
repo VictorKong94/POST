@@ -16,7 +16,7 @@ function(input, output, session) {
                  "Changed Statin Type Cohort" = "data/delta_type.csv",
                  "No BMIs Cohort" = "data/no_bmi.csv",
                  "No Change in Statin Type Cohort" = "data/no_delta_type.csv")
-    csv = read.csv(csv)
+    csv = read.csv(csv, na.strings = "")
     if (input$cohort == "Analysis Cohort - Males") {
       csv$sex = factor(csv$sex, levels = c("F", "M"))
     } else if (input$cohort == "Analysis Cohort - Females") {
@@ -34,7 +34,7 @@ function(input, output, session) {
   #######################
   # DEMOGRAPHICS TABLES #
   #######################
-  
+      
   # Compose demographics table: entire population
   complete_demographics = reactive({
     demographics(df())
