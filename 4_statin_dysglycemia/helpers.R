@@ -1,6 +1,7 @@
 # Dictionary of names for predictor variables
 dictionary = c("Age" = "age",
                "Change in BMI" = "delta_fg",
+               "Change in PDD per DDD" = "delta_pdd",
                "Change in FG" = "delta_fg",
                "Change in LDL" = "delta_ldl",
                "Change in Log LDL" = "delta_log_ldl",

@@ -140,7 +140,7 @@ df = df[, c("id", # Patient identification
             "kpnc_race_category", "kpnc_hispanic", # Race / Hispanic
             "Primary.Drug", "changed_statin_type",
                             "days_before_statin_change", # Statin-related
-            "PDD.DDD", "PDD.DDD.Factor", # PDD-related
+            "PDD.DDD", "PDD.DDD.Factor", "Overall.Change.in.PDD.DDD", # PDD/DDD
             "lovastatin_pdd", "other_pdd",# PDD- and Statin-related
             "ave_pre_ldl", "log_pre_ldl", "delta_ldl", "delta_log_ldl",
                            "met_ldl_goal", # LDL
@@ -155,7 +155,7 @@ colnames(df) = c("id",
                  "race", "hispanic",
                  "statin_type", "changed_statin_type",
                                 "days_before_statin_change",
-                 "pdd", "pdd_group",
+                 "pdd", "pdd_group", "delta_pdd",
                  "lovastatin_pdd", "other_pdd",
                  "pre_ldl", "log_pre_ldl", "delta_ldl", "delta_log_ldl",
                             "met_ldl_goal",
