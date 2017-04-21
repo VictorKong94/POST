@@ -121,6 +121,7 @@ for (i in 1:length(adj_max_delta)) {
   adj_max_delta[i] = adj_ave_post_glu - x$avepre_gluresult[i]
 }
 adj_max_delta[is.nan(adj_max_delta)] = NA
+df$adj_max_delta = df$maxdelta
 df$adj_max_delta[df$MRN %in% x$MRN] = adj_max_delta
 
 # Variables to check whether PDD is different for users of different statins
