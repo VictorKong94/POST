@@ -130,6 +130,12 @@ df$lovastatin_pdd[df$Primary.Drug != "Lova"] = 0
 df$other_pdd = df$PDD.DDD
 df$other_pdd[df$Primary.Drug %in% c("Lova", "Simva")] = 0
 
+# Indicator variables for statin dose increase/decrease
+df$increased_pdd = df$Overall.Change.in.PDD.DDD > 0
+df$increased_pdd[df$Overall.Change.in.PDD.DDD < 0] = NA
+df$decreased_pdd = df$Overall.Change.in.PDD.DDD < 0
+df$decreased_pdd[df$Overall.Change.in.PDD.DDD > 0] = NA
+
 # And we'll only keep variables important to our analysis
 df = df[, c("id", # Patient identification
             "diabflag", "diabdx", "diabcflag", # Development of diabetes
@@ -141,7 +147,8 @@ df = df[, c("id", # Patient identification
             "kpnc_race_category", "kpnc_hispanic", # Race / Hispanic
             "Primary.Drug", "changed_statin_type",
                             "days_before_statin_change", # Statin-related
-            "PDD.DDD", "PDD.DDD.Factor", "Overall.Change.in.PDD.DDD", # PDD/DDD
+            "PDD.DDD", "PDD.DDD.Factor", "Overall.Change.in.PDD.DDD",
+                       "increased_pdd", "decreased_pdd", # PDD/DDD
             "lovastatin_pdd", "other_pdd",# PDD- and Statin-related
             "ave_pre_ldl", "log_pre_ldl", "delta_ldl", "delta_log_ldl",
                            "met_ldl_goal", # LDL
@@ -156,7 +163,8 @@ colnames(df) = c("id",
                  "race", "hispanic",
                  "statin_type", "changed_statin_type",
                                 "days_before_statin_change",
-                 "pdd", "pdd_group", "delta_pdd",
+                 "pdd", "pdd_group", "delta_pdd", "increased_pdd",
+                        "decreased_pdd",
                  "lovastatin_pdd", "other_pdd",
                  "pre_ldl", "log_pre_ldl", "delta_ldl", "delta_log_ldl",
                             "met_ldl_goal",

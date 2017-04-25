@@ -1,11 +1,11 @@
 # Dictionary of names for predictor variables
 dictionary = c("Age" = "age",
-               "Change in BMI" = "delta_fg",
-               "Change in PDD per DDD" = "delta_pdd",
+               "Change in BMI" = "delta_bmi",
                "Change in FG" = "delta_fg",
                "Change in FG (Adjusted)" = "adj_delta_fg",
                "Change in LDL" = "delta_ldl",
                "Change in Log LDL" = "delta_log_ldl",
+               "Changed Statin Dose" = "delta_pdd",
                "Changed Statin Type" = "changed_statin_type",
                "Days Before Changing Statin Type" = "days_before_statin_change",
                "Diabetes Development" = "",

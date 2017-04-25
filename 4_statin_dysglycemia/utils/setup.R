@@ -30,6 +30,7 @@ lin_reg = function(formula, data = df) {
 
 # Method to perform a two-sample t-test
 t_test = function(variable, split, data = df) {
+  data = data[!is.na(data[, split]),]
   if (length(unique(data[, split])) != 2) {
     stop("Variable must have only two levels")
   }
@@ -44,11 +45,13 @@ agg = function(variable, data = df) {
               by = list(data[, variable]),
               FUN = function(x) mean(x, na.rm = T))
   )
-  if (length(unique(data[, variable])) == 2) {
+  if (length(setdiff(unique(data[, variable]), NA)) == 2) {
     drop = switch(variable,
-                  "changed_statin_type" = "days_before_changed_statin",
+                  "changed_statin_type" = "days_before_statin_change",
+                  "decreased_pdd" = "increased_pdd",
                   "diabFG" = "survival",
                   "diabComb" = "survival",
+                  "increased_pdd" = "decreased_pdd",
                   NA)
     report = rbind(
       report,

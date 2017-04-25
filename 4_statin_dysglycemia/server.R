@@ -75,7 +75,7 @@ function(input, output, session) {
               "Change in FG (Adjusted)",
               "Change in LDL",
               "Change in Log LDL",
-              "Change in PDD per DDD",
+              "Changed Statin Dose",
               "Changed Statin Type",
               "Days Before Changing Statin Type",
               "Hispanic",
