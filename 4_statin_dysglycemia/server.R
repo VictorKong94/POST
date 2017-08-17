@@ -10,23 +10,25 @@ function(input, output, session) {
   
   df = reactive({
     csv = switch(input$cohort,
-                 "Analysis Cohort" = "data/analysis_cohort.csv",
-                 "Analysis Cohort - Males" = "data/analysis_cohort_M.csv",
-                 "Analysis Cohort - Females" = "data/analysis_cohort_F.csv",
-                 "Changed Statin Type Cohort" = "data/delta_type.csv",
-                 "No BMIs Cohort" = "data/no_bmi.csv",
-                 "No Change in Statin Type Cohort" = "data/no_delta_type.csv")
+                 "Case Cohort" = "data/case.csv",
+                 "Case Cohort - Females" = "data/case_f.csv",
+                 "Case Cohort - Lovastatin (Exclusive)" = "data/case_lo.csv",
+                 "Case Cohort - Males" = "data/case_m.csv",
+                 "Case Cohort - Simvastatin (Exclusive)" = "data/case_si.csv",
+                 "Control Cohort" = "data/control.csv")
     csv = read.csv(csv, na.strings = "")
-    if (input$cohort == "Analysis Cohort - Males") {
-      csv$sex = factor(csv$sex, levels = c("F", "M"))
-    } else if (input$cohort == "Analysis Cohort - Females") {
+    if (input$cohort == "Case Cohort - Females") {
       csv$sex = "F"
       csv$sex = factor(csv$sex, levels = c("F", "M"))
-    } else {
-      csv$sex = relevel(csv$sex, ref = "F")
+    } else if (input$cohort == "Case Cohort - Lovastatin (Exclusive)") {
+      csv$type_pdd = factor(csv$type_pdd, levels = c("at", "lo", "pr", "si"))
+    } else if (input$cohort == "Case Cohort - Males") {
+      csv$sex = factor(csv$sex, levels = c("F", "M"))
+    } else if (input$cohort == "Case Cohort - Simvastatin (Exclusive)") {
+      csv$type_pdd = factor(csv$type_pdd, levels = c("at", "lo", "pr", "si"))
     }
     csv$race = relevel(csv$race, ref = "WH")
-    csv$statin_type = relevel(csv$statin_type, ref = "Simva")
+    csv$type_pdd = relevel(csv$type_pdd, ref = "si")
     csv
   })
   
@@ -35,23 +37,16 @@ function(input, output, session) {
   # DEMOGRAPHICS TABLES #
   #######################
       
-  # Compose demographics table: entire population
-  complete_demographics = reactive({
-    demographics(df())
-  })
-  
-  # Compose demographics table: identify as Hispanic but not Multiracial
-  hispanic_not_multiracial = reactive({
-    demographics(subset(df(), hispanic == "Y" & race != "MU"))
+  # Compose demographics table
+  demographics = reactive({
+    demog(df())
   })
   
   # Render the tables in Shiny
-  output$complete_demographics = renderTable(complete_demographics(),
-                                             hover = T,
-                                             na = "")
-  output$hispanic_not_multiracial = renderTable(hispanic_not_multiracial(),
-                                                hover = T,
-                                                na = "")
+  output$demographics = renderTable(demographics(),
+                                    colnames = F,
+                                    hover = T,
+                                    na = "")
   
   
   #####################################
@@ -65,34 +60,64 @@ function(input, output, session) {
   
   # We don't want the same variable for a predictor as our response
   predictor_choices = reactive({
-    leave_out_sex = switch(input$cohort,
-                           "Analysis Cohort - Males" = "Sex",
-                           "Analysis Cohort - Females" = "Sex",
-                           NA)
+    drop_var = switch(
+      input$cohort,
+      "Case Cohort - Females" = "Sex",
+      "Case Cohort - Lovastatin (Exclusive)" = c("Changed Statin Type",
+                                                 "Date Changed Statin Type",
+                                                 "Initial Statin Type",
+                                                 "Statin Type (from mgs)",
+                                                 "Statin Type (from PDD/DDD)"),
+      "Case Cohort - Males" = "Sex",
+      "Case Cohort - Simvastatin (Exclusive)" = c("Changed Statin Type",
+                                                  "Date Changed Statin Type",
+                                                  "Initial Statin Type",
+                                                  "Statin Type (from mgs)",
+                                                  "Statin Type (from PDD/DDD)"),
+      NA)
     setdiff(c("Age",
+              "Average Daily Exposure (mgs)",
+              "Average Daily Exposure (PDD/DDD)",
               "Change in BMI",
-              "Change in FG",
-              "Change in FG (Adjusted)",
-              "Change in LDL",
-              "Change in Log LDL",
-              "Changed Statin Dose",
+              "Change in Median CK",
+              "Change in Median HDL",
+              "Change in Median LDL",
+              "Change in Median Total Cholesterol",
+              "Change in Median Triglycerides",
               "Changed Statin Type",
-              "Days Before Changing Statin Type",
+              "Date Changed Statin Type",
               "Hispanic",
-              "Log Pre-Statin LDL",
-              "Main Statin Used (Days)",
-              "Met LDL<100 Goal",
-              "PDD per DDD",
-              "PDD per DDD (Lovastatin)",
-              "PDD per DDD (Other)",
+              "Initial Statin Type",
+              "Max-Delta Change in FG",
+              "Maximum Post-statin Triglycerides",
+              "Median Post-statin LDL < 100",
+              "Median Pre-Statin CK",
+              "Median Pre-Statin FG",
+              "Median Pre-Statin HDL",
+              "Median Pre-Statin LDL",
+              "Median Pre-Statin Total Cholesterol",
+              "Median Pre-Statin Triglycerides",
+              "Median Post-Statin CK",
+              "Median Post-Statin HDL",
+              "Median Post-Statin LDL",
+              "Median Post-Statin Total Cholesterol",
+              "Median Post-Statin Triglycerides",
+              "Number of CK Readings",
+              "Number of Post-statin CK Readings",
+              "Number of Pre-statin CK Readings",
+              "Post-Statin BMI",
+              "Post-Statin FG",
               "Pre-Statin BMI",
-              "Pre-Statin FG",
-              "Pre-Statin LDL",
               "Race",
               "Sex",
-              "TSH Level"),
+              "Statin Type (from mgs)",
+              "Statin Type (from PDD/DDD)",
+              "Survival",
+              "Total Exposure (from mgs)",
+              "Total Exposure (from PDD/DDD)",
+              "TSH Level" = "tsh"),
             c(input$response,
-              leave_out_sex))
+              drop_var))
   })
   
   # Update Select Input for predictor choices
@@ -137,23 +162,24 @@ function(input, output, session) {
   # Create table of test results with some other response
   test_results = reactive({
     if (input$response == "Diabetes Development") {
-      diab = test("diabFG", predictor(), nTest(), df(), input)
-      diab = cbind(diab,
-                   test("diabICD", predictor(), nTest(), df(), input
-                        )[, c("Beta", "P")])
-      diab = cbind(diab,
-                   test("diabComb", predictor(), nTest(), df(), input
-                        )[, c("Beta", "P")])
-      if (input$predictor %in% c("Main Statin Used (Days)", "Race")) {
+      diab = cbind(
+        test("diabFG", predictor(), nTest(), df(), input),
+        test("diabICD", predictor(), nTest(), df(), input)[, c("Beta", "P")],
+        test("diabRX", predictor(), nTest(), df(), input)[, c("Beta", "P")],
+        test("diabANY", predictor(), nTest(), df(), input)[, c("Beta", "P")]
+      )
+      if (input$predictor %in% c("Statin Type", "Race")) {
         colnames(diab) = c("Covariates", "Level",
-                           "Beta (FG>126)", "P (FG>126)",
+                           "Beta (FG>125)", "P (FG>125)",
                            "Beta (ICD)", "P (ICD)",
-                           "Beta (Either)", "P (Either)")
+                           "Beta (Rx)", "P (Rx)",
+                           "Beta (Any)", "P (Any)")
       } else {
         colnames(diab) = c("Covariates",
-                           "Beta (FG>126)", "P (FG>126)",
+                           "Beta (FG>125)", "P (FG>125)",
                            "Beta (ICD)", "P (ICD)",
-                           "Beta (Either)", "P (Either)")
+                           "Beta (Rx)", "P (Rx)",
+                           "Beta (Any)", "P (Any)")
       }
       diab
     } else {
@@ -175,22 +201,25 @@ function(input, output, session) {
   output$download = downloadHandler(
     filename = function(con) {
       if (input$show == "Demographics") {
-        paste0("Demographics (", input$cohort, ").zip")
+        "Demographics.csv"
       } else {
         paste0(input$response, " - ", input$predictor, ".csv")
       }
     },
     content = function(con) {
       if (input$show == "Demographics") {
-        files = paste0(c("Complete", "Hispanic, not Multiracial"),
-                       ".csv")
-        tmpdir =  tempdir()
-        setwd(tempdir())
-        write.csv(complete_demographics(), files[1], row.names = F, na = "")
-        write.csv(hispanic_not_multiracial(), files[2], row.names = F, na = "")
-        zip(zipfile = con, files = files)
+        write.table(demographics(),
+                    con,
+                    col.names = F,
+                    na = "",
+                    sep = ",",
+                    row.names = F)
       } else {
-        write.csv(test_results(), con, row.names = F, na = "")
+        write.table(test_results(),
+                    con,
+                    na = "",
+                    sep = ",",
+                    row.names = F)
       }
     }
   )
