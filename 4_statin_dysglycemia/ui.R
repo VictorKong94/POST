@@ -14,12 +14,12 @@ fluidPage(
       # Select Input -> Cohort
       selectInput(inputId = "cohort",
                   label = "Select Cohort",
-                  choices = c("Analysis Cohort",
-                              "Analysis Cohort - Males",
-                              "Analysis Cohort - Females",
-                              "Changed Statin Type Cohort",
-                              "No BMIs Cohort",
-                              "No Change in Statin Type Cohort")
+                  choices = c("Case Cohort",
+                              "Case Cohort - Females",
+                              "Case Cohort - Lovastatin (Exclusive)",
+                              "Case Cohort - Males",
+                              "Case Cohort - Simvastatin (Exclusive)",
+                              "Control Cohort")
       ),
       
       # Radio Buttons -> See 'Demographics' or 'Test Results'?
@@ -36,12 +36,13 @@ fluidPage(
         # Select Input -> Select Response Variable
         selectInput(inputId = "response",
                     label = "Select Response Variable",
-                    choices = c("Change in FG",
-                                "Change in FG (Adjusted)",
-                                "Change in LDL",
-                                "Change in Log LDL",
+                    choices = c("Change in Median HDL",
+                                "Change in Median LDL",
+                                "Change in Median Total Cholesterol",
+                                "Change in Median Triglycerides",
                                 "Diabetes Development",
-                                "Survival"),
+                                "Max-Delta Change in FG",
+                                "Maximum Post-statin Triglycerides"),
                     selected = "Diabetes Development"
         ),
         
@@ -74,12 +75,7 @@ fluidPage(
       # Show Demographics
       conditionalPanel(
         condition = "input.show == 'Demographics'",
-        tabsetPanel(type = "tabs",
-                    tabPanel("Complete",
-                             tableOutput(outputId = "complete_demographics")),
-                    tabPanel("Hispanic, not Multiracial",
-                             tableOutput(outputId = "hispanic_not_multiracial"))
-        )
+        tableOutput(outputId = "demographics")
       ),
       
       # Show Test Results
