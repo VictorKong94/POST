@@ -47,7 +47,7 @@ agg = function(variable, data = df) {
   )
   if (length(setdiff(unique(data[, variable]), NA)) == 2) {
     drop = switch(variable,
-                  "changed_statin_type" = "days_before_statin_change",
+                  "statin_change" = "statin_change_date",
                   "decreased_pdd" = "increased_pdd",
                   "diabFG" = "survival",
                   "diabComb" = "survival",
@@ -95,15 +95,16 @@ survival = function(variable, CI = F, data = df) {
   tmp = data.frame(variable = data[, variable],
                    "survival" = data$survival,
                    "censor" = !is.na(data$survival))
-  tmp$variable = droplevels(tmp$variable)
+  if (is.factor(tmp$variable)) tmp$variable = droplevels(tmp$variable)
   tmp$survival[is.na(tmp$survival)] = max(tmp$survival, na.rm = T)
   fit = survfit(Surv(survival, censor) ~ variable,
                 data = tmp,
                 conf.type = "log-log")
   autoplot(fit, fun = "event", conf.int = CI, censor = F) +
-    labs(x = "days after start of statins", y = "fasting glucose > 126",
+    labs(x = "days after start of statins", y = "fasting glucose > 125",
          color = variable)
 }
+# png(width = 800, height = 500, units = "px", res = 96)
 
 # Make sure we're omitting missing values from individual analyses
 options(na.action = "na.omit")

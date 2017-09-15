@@ -36,13 +36,14 @@ dictionary = c(
   "Change in Median Total Cholesterol" = "delta_tc",
   "Change in Median Triglycerides" = "delta_trig",
   "Max-Delta Change in FG" = "delta_fg",
+  "Percent Change in Median LDL" = "pc_delta_ldl",
   
   # Other lab information
-  "Maximum Post-statin Triglycerides" = "post_max_trig",
-  "Median Post-statin LDL < 100" = "met_ldl_goal",
+  "Maximum Post-Statin Triglycerides" = "post_max_trig",
+  "Median Post-Statin LDL < 100" = "met_ldl_goal",
   "Number of CK Readings" = "num_ck",
-  "Number of Post-statin CK Readings" = "num_post_ck",
-  "Number of Pre-statin CK Readings" = "num_pre_ck",
+  "Number of Post-Statin CK Readings" = "num_post_ck",
+  "Number of Pre-Statin CK Readings" = "num_pre_ck",
   
   # Statin dose/type information
   "Average Daily Exposure (mgs)" = "avg_mgs",
@@ -250,20 +251,28 @@ test = function(response, predictor, nTest, data, input) {
   no_covars = reg(make_formula(response, predictor), data)
   
   # Determine how many rows to set aside for each test
-  if (predictor %in% c("race", "statin_type")) {
+  if (predictor %in% c("race", "type_mgs", "type_pdd")) {
     
     # Determine what levels to list
     if (predictor == "race") {
       lvls = c("Asian", "Black", "Multiracial")
+    } else if (predictor == "type_mgs") {
+      lvls = c("Atorvastatin",
+               "Lovastatin",
+               "Pravastatin",
+               "Rosuvastatin")
     } else {
-      lvls = c("Atorvastatin", "Lovastatin", "Other statin", "Pravastatin")
+      lvls = c("Atorvastatin",
+               "Lovastatin",
+               "Pravastatin",
+               "Rosuvastatin")
     }
     
     # Save information from the test with no covariates
     X = data.frame("Covariates" = "",
                    "Level" = c(lvls, "(Overall ANOVA)"))
-    X$Beta = c(tail(no_covars$summary[, 1], 3), NA)
-    X$P = c(tail(no_covars$summary[, 2], 3),
+    X$Beta = c(tail(no_covars$summary[, 1], length(lvls)), NA)
+    X$P = c(tail(no_covars$summary[, 2], length(lvls)),
             no_covars$anova)
     
     # Perform each subsequent test the user desires
@@ -278,8 +287,8 @@ test = function(response, predictor, nTest, data, input) {
                   data.frame(
                     "Covariates" = toString(covariates),
                     "Level" = lvls,
-                    "Beta" = tail(covars$summary[, 1], 3),
-                    "P" = tail(covars$summary[, 2], 3)
+                    "Beta" = tail(covars$summary[, 1], length(lvls)),
+                    "P" = tail(covars$summary[, 2], length(lvls))
                   ),
                   data.frame(
                     "Covariates" = toString(covariates),

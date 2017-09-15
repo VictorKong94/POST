@@ -22,10 +22,10 @@ getlabs = function(row, test) {
                   yes = NA,
                   no = result[tmp][which.min(abs(date[tmp] - df$cutoff[row]))])
   } else if (test == "fg") {
-    # Pre-statin lab: median lab result prior to statin start
+    # Pre-statin FG: median lab result prior to statin start
     tmp = unlist(result[date <= 0 & !is.na(date)])
     pre = ifelse(length(tmp) == 0, yes = NA, no = median(tmp))
-    # Post-statin lab: max delta lab result after statin start but before cutoff
+    # Post-statin FG: max-delta lab result after statin start but before cutoff
     tmp = unlist(result[date > 0 & !is.na(date)])
     if (length(pre) == 0) {
       post = ifelse(length(tmp) == 0, yes = NA, no = max(tmp))
@@ -83,7 +83,7 @@ prescriptions = read.csv("../data/compliant/prescriptions.csv",
 # d) date of maximum post-statin FG reading.
 fgdate = labs[, grep("^fgdate[[:digit:]]", colnames(labs))]
 fg = labs[, grep("^fg[[:digit:]]", colnames(labs))]
-fg[is.na(fg) | fgdate < 0] = -1
+fg[is.na(fg) | fgdate <= 0] = -1
 # We will begin by assigning (d) to all individuals
 df$cutoff = fgdate[cbind(1:nrow(df), max.col(fg))]
 # Next, we'll overwrite using (c) for individuals prescribed diabetes medication
@@ -356,7 +356,7 @@ for (i in 1:nrow(df)) {
     df$type_change[i] = 0
     df$type_change_date[i] = NA
   }
-  
+  if (i %% 100 == 0) print(i) # DELETE THIS LATER
 }
 
 
@@ -388,6 +388,7 @@ df$delta_hdl = df$post_hdl - df$pre_hdl
 df$delta_ldl = df$post_ldl - df$pre_ldl
 df$delta_tc = df$post_tc - df$pre_tc
 df$delta_trig = df$post_trig - df$pre_trig
+df$pc_delta_ldl = 100 * (df$post_trig / df$pre_trig - 1)
 
 # Numbers of CK tests, which are requested only for at-risk patients
 df$num_pre_ck = apply(ckdate, 1, function(x) sum(x <= 0, na.rm = T))
@@ -426,7 +427,7 @@ df = df[, c(
   "pre_ck", "post_ck", "delta_ck", "num_pre_ck", "num_post_ck", "num_ck",
   "pre_fg", "post_fg", "delta_fg", "max_fg",
   "pre_hdl", "post_hdl", "delta_hdl",
-  "pre_ldl", "post_ldl", "delta_ldl", "met_ldl_goal",
+  "pre_ldl", "post_ldl", "delta_ldl", "pc_delta_ldl", "met_ldl_goal",
   "pre_tc", "post_tc", "delta_tc",
   "pre_trig", "post_trig", "post_max_trig", "delta_trig",
   

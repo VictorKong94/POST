@@ -64,7 +64,6 @@ demographics$diabRX_date =
   as.numeric(as.Date(demographics$diabRX_date,
                      format = "%m/%d/%y",
                      origin = "01/01/00") - statin_start)
-demographics$hispanic[demographics$hispanic == "U"] = "N"
 demographics$statin_start = NULL
 
 # Write to file
@@ -84,7 +83,7 @@ labs = read.csv("../data/raw/labs.csv",
 
 # Pull important data
 id = labs$id
-statin_strt = as.Date(labs$statin_strt,
+statin_start = as.Date(labs$statin_start,
                       format = "%m/%d/%y",
                       origin = "01/01/00")
 ckresult = labs[, grep("CK_RESULT", colnames(labs))]
@@ -97,9 +96,9 @@ trigresult = labs[, grep("TRIG_RESULT", colnames(labs))]
 for (j in 1:ncol(labdate)) {
   labdate[, j] = as.numeric(as.Date(labdate[, j],
                                     format = "%m/%d/%y",
-                                    origin = "01/01/00") - statin_strt)
+                                    origin = "01/01/00") - statin_start)
 }
-rm(labs, statin_strt)
+rm(labs, statin_start)
 
 # CK
 L = max(apply(ckresult, 1, function(x) sum(!is.na(x))))
@@ -246,10 +245,9 @@ rm(j, rx_qty, temp)
 
 # Extract statin type and weight information
 mgs = gennm
-gennm1 = gennm
 for (j in 1:ncol(gennm)) {
   mgs[, j] = as.numeric(gsub("[^[:digit:]]", "", gennm[, j]))
-  gennm1[, j] = tolower(substr(gennm[, j], 1, 2))
+  gennm[, j] = tolower(substr(gennm[, j], 1, 2))
 }
 colnames(mgs) = paste0("mgs", 1:ncol(mgs))
 

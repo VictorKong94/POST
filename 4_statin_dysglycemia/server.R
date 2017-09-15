@@ -28,6 +28,8 @@ function(input, output, session) {
       csv$type_pdd = factor(csv$type_pdd, levels = c("at", "lo", "pr", "si"))
     }
     csv$race = relevel(csv$race, ref = "WH")
+    csv$type_mgs[!(csv$type_mgs %in% c("at", "lo", "pr", "ro", "si"))] = NA
+    csv$type_mgs = relevel(csv$type_mgs, ref = "si")
     csv$type_pdd = relevel(csv$type_pdd, ref = "si")
     csv
   })
@@ -89,8 +91,8 @@ function(input, output, session) {
               "Hispanic",
               "Initial Statin Type",
               "Max-Delta Change in FG",
-              "Maximum Post-statin Triglycerides",
-              "Median Post-statin LDL < 100",
+              "Maximum Post-Statin Triglycerides",
+              "Median Post-Statin LDL < 100",
               "Median Pre-Statin CK",
               "Median Pre-Statin FG",
               "Median Pre-Statin HDL",
@@ -103,8 +105,9 @@ function(input, output, session) {
               "Median Post-Statin Total Cholesterol",
               "Median Post-Statin Triglycerides",
               "Number of CK Readings",
-              "Number of Post-statin CK Readings",
-              "Number of Pre-statin CK Readings",
+              "Number of Post-Statin CK Readings",
+              "Number of Pre-Statin CK Readings",
+              "Percent Change in Median LDL",
               "Post-Statin BMI",
               "Post-Statin FG",
               "Pre-Statin BMI",

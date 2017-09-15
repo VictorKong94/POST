@@ -42,7 +42,8 @@ fluidPage(
                                 "Change in Median Triglycerides",
                                 "Diabetes Development",
                                 "Max-Delta Change in FG",
-                                "Maximum Post-statin Triglycerides"),
+                                "Maximum Post-Statin Triglycerides",
+                                "Percent Change in Median LDL"),
                     selected = "Diabetes Development"
         ),
         
